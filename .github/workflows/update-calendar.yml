@@ -1,0 +1,38 @@
+name: Update Hull Events Calendar
+on:
+  schedule:
+    - cron: "0 6 * * *"   # runs daily at 06:00 UTC (adjust if you like)
+  workflow_dispatch:       # allows manual run from Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Generate ICS
+        run: python generate_hull_calendar.py
+
+      - name: Commit and push ICS (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hull_events.ics
+          git commit -m "Daily calendar update" || echo "No changes to commit"
+          git push
